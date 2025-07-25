@@ -3,20 +3,29 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
-// === Pins ===
-const int ledPin = 14;
-const int soundPin = 34;
+#include <Adafruit_NeoPixel.h>
 
-const char* homessid = "****";
-const char* homepassword = "****";
+// === Pins ===
+const int lightSensPin = 14;
+const int soundPin = 34;
+const int ledPin= 12;
+
+// === LED DATA ===
+const int NUMPIXELS = 12;
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, ledPin, NEO_GRB + NEO_KHZ800);
+unsigned int RGB_values[3] = {0,0,0};
+
+const char* homessid = "***";
+const char* homepassword = "***";
+
 
 
 // === WLAN Zugangsdaten ===
 const char* ssid = homessid;
-const char* password = homepassword;
+const char* password = homepassword;//TODO: Aaron muss sich um die wifi maneger kümmer
 
 // === MQTT Broker ===
-const char *mqtt_broker = "192.168.1.21";// "192.168.178.100";
+const char *mqtt_broker = "192.168.178.100"; // eventuell auch über wifimaneger
 const int mqtt_port = 1883;
 const char *mqtt_username = "lumos";
 const char *mqtt_password ="AAL_IoT";
@@ -24,10 +33,9 @@ const char *mqtt_password ="AAL_IoT";
 
 // === Luminos Connection Data ===
 const int partners_count = 3;
-unsigned long partners[partners_count] = {0x00000001};
+unsigned long partners[partners_count] = {0x00000001,NULL, 0x00000001}; // IDs der anderen lumose die Durch Wifimaneger gestellt werden, NH AARON????
 
-const unsigned long lumos_id = 0x00000002; //MAX:0xFFFFFFFF
-
+const unsigned long lumos_id = 0x00000001; //MAX:0xFFFFFFFF
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -52,7 +60,7 @@ void setup_wifi() {
     Serial.println(WiFi.localIP());
 }
 
-void callback(char *topic, byte *payload, unsigned int length) {
+void callback(char *topic, byte *payload, unsigned int length) { //function die aufgerufen wird wenn auf den gefolgten MQTT kanal was gesendet wird
     Serial.print("Message arrived in topic: ");
     Serial.println(topic);
     Serial.print("Message:");
@@ -63,9 +71,19 @@ void callback(char *topic, byte *payload, unsigned int length) {
     Serial.println(message);
     analogWrite(ledPin, message.toInt());
     Serial.println("-----------------------");
+    for (int i = 0; i < partners_count; i++) { //TODO: Was wenn ein lumos nicht mehr sendet und der letzte wert nicht 0 war?
+        if (strcmp(String(partners[i],HEX).c_str(), topic) == 0) {
+            int value = message.toInt();
+            if (value > 255) {
+                RGB_values[i] = 255;
+            }
+            else {
+                RGB_values[i] = value;
+            }
+        }
+    }
 }
-//String((char) payload[i]).toInt()
-int soundcounter = 0;
+int soundcounter = 0; // counter wie oft hintereinander ein sound gemessen wird um einzelne Ausschläge zu ignorieren
 int measureSound(){
     long sound = 0;
     for(int i=0;i<7;i++){
@@ -90,8 +108,18 @@ int measureSound(){
     }
 }
 
+// === LED functions ===
+void draw_led(int R,int G, int B) {
+    for(int i=0; i<NUMPIXELS; i++) {
+        pixels.setPixelColor(i, pixels.Color(R, G, B));
+    }
+    pixels.show();
+
+}
+
 
 void setup() {
+    //draw_led(255, 255, 255);
     Serial.begin(115200);
     pinMode(ledPin, OUTPUT);
     setup_wifi();
@@ -122,6 +150,7 @@ void setup() {
 void loop() {
     client.loop();
     client.publish(String(lumos_id,HEX).c_str(),std::to_string(measureSound()).c_str());
+    draw_led(RGB_values[0],RGB_values[1],RGB_values[2]);
     delay(500);
 
 }
