@@ -15,8 +15,8 @@ const int NUMPIXELS = 12;
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, ledPin, NEO_GRB + NEO_KHZ800);
 unsigned int RGB_values[3] = {0,0,0};
 
-const char* homessid = "***";
-const char* homepassword = "***";
+const char* homessid = "****";
+const char* homepassword = "****";
 
 
 
@@ -84,29 +84,21 @@ void callback(char *topic, byte *payload, unsigned int length) { //function die 
     }
 }
 int soundcounter = 0; // counter wie oft hintereinander ein sound gemessen wird um einzelne Ausschläge zu ignorieren
+int last_last_sound = 0;
+int last_sound = 0;
 int measureSound(){
-    long sound = 0;
-    for(int i=0;i<7;i++){
-        sound +=analogRead(soundPin);
-    }
-
-    sound = ((sound/7));
-    Serial.print("Sound: ");
-    Serial.println(sound);
-    if(sound<220&&sound>80) {
-        sound=0;
-        soundcounter = 0;
-    }
-    else {
-        soundcounter++;
-    }
-    if (soundcounter>1){
-        return sound-sound/4;
-    }
-    else {
-        return 5;
-    }
+    int reading = analogRead(soundPin);
+    if (reading < 0) { reading = -reading;}
+    if (reading < 150) {reading = 0;}
+    reading = (reading/4);
+    reading = (reading + 3*last_sound)/4;
+    reading = (reading + last_last_sound)/2;
+    if (reading < 15){reading = reading/4;}
+    last_last_sound = last_sound;
+    last_sound = reading;
+    return reading;
 }
+
 
 // === LED functions ===
 void draw_led(int R,int G, int B) {
@@ -136,7 +128,6 @@ void setup() {
             delay(2000);
         }
     }
-    Serial.println("checkpoint 1");
 
     for (int i = 0; i < partners_count; i++) {
         if (partners[i]!=0) {
@@ -150,8 +141,10 @@ void setup() {
 void loop() {
     client.loop();
     client.publish(String(lumos_id,HEX).c_str(),std::to_string(measureSound()).c_str());
+    client.loop();
     draw_led(RGB_values[0],RGB_values[1],RGB_values[2]);
-    delay(500);
+
+
 
 }
 
