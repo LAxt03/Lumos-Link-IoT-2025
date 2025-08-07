@@ -6,7 +6,7 @@
 #include <Adafruit_NeoPixel.h>
 
 // === Pins ===
-const int lightSensPin = 14;
+const int lightSensPin = 33;
 const int soundPin = 34;
 const int ledPin= 12;
 
@@ -33,7 +33,7 @@ const char *mqtt_password ="AAL_IoT";
 
 // === Luminos Connection Data ===
 const int partners_count = 3;
-unsigned long partners[partners_count] = {0x00000001,NULL, 0x00000001}; // IDs der anderen lumose die Durch Wifimaneger gestellt werden, NH AARON????
+unsigned long partners[partners_count] = {0x00000001,0x00000001, 0x00000001}; // IDs der anderen lumose die Durch Wifimaneger gestellt werden, NH AARON????
 
 const unsigned long lumos_id = 0x00000001; //MAX:0xFFFFFFFF
 
@@ -83,14 +83,13 @@ void callback(char *topic, byte *payload, unsigned int length) { //function die 
         }
     }
 }
-int soundcounter = 0; // counter wie oft hintereinander ein sound gemessen wird um einzelne Ausschläge zu ignorieren
 int last_last_sound = 0;
 int last_sound = 0;
 int measureSound(){
     int reading = analogRead(soundPin);
     if (reading < 0) { reading = -reading;}
-    if (reading < 150) {reading = 0;}
     reading = (reading/4);
+    if (reading < 30) {reading = 0;}
     reading = (reading + 3*last_sound)/4;
     reading = (reading + last_last_sound)/2;
     if (reading < 15){reading = reading/4;}
@@ -100,13 +99,25 @@ int measureSound(){
 }
 
 
+
+
 // === LED functions ===
 void draw_led(int R,int G, int B) {
     for(int i=0; i<NUMPIXELS; i++) {
         pixels.setPixelColor(i, pixels.Color(R, G, B));
     }
     pixels.show();
+}
 
+void draw_led(int R,int G, int B, int Brightness) {
+    for(int i=0; i<NUMPIXELS; i++) {
+        pixels.setPixelColor(i, pixels.Color(
+            static_cast<int>(static_cast<float>(R)*static_cast<float>(Brightness)/100),
+            static_cast<int>(static_cast<float>(G)*static_cast<float>(Brightness)/100),
+            static_cast<int>(static_cast<float>(B)*static_cast<float>(Brightness)/100)
+            ));
+    }
+    pixels.show();
 }
 
 
@@ -137,14 +148,22 @@ void setup() {
         }
     }
 }
-
+int loops_sins_brightness_measured =0;
+int led_brightness = 100;
 void loop() {
     client.loop();
     client.publish(String(lumos_id,HEX).c_str(),std::to_string(measureSound()).c_str());
-    client.loop();
-    draw_led(RGB_values[0],RGB_values[1],RGB_values[2]);
+    draw_led(RGB_values[0],RGB_values[1],RGB_values[2],led_brightness);
 
-
-
+    if(RGB_values[0]+RGB_values[1]+RGB_values[2] == 0 || loops_sins_brightness_measured > 500){
+        draw_led(255,0,255);
+        int brightness = analogRead(lightSensPin);
+        draw_led(RGB_values[0],RGB_values[1],RGB_values[2],led_brightness);
+        if (brightness > 1500){led_brightness = 100;}
+        else if (brightness > 500){led_brightness = 60;}
+        else if (brightness > 200){led_brightness = 10;}
+        loops_sins_brightness_measured = 0;
+    }
+    loops_sins_brightness_measured++;
 }
 
