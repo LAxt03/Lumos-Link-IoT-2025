@@ -156,7 +156,7 @@ void loop() {
     draw_led(RGB_values[0],RGB_values[1],RGB_values[2],led_brightness);
 
     if(RGB_values[0]+RGB_values[1]+RGB_values[2] == 0 || loops_sins_brightness_measured > 500){
-        draw_led(255,0,255);
+        draw_led(,0,0);
         int brightness = analogRead(lightSensPin);
         draw_led(RGB_values[0],RGB_values[1],RGB_values[2],led_brightness);
         if (brightness > 1500){led_brightness = 100;}
