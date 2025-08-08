@@ -9,6 +9,8 @@
 const int lightSensPin = 33;
 const int soundPin = 34;
 const int ledPin= 12;
+const int turn_off_button = 14; // muss ein pin mit PULL-UP-RESISTOR sein
+//const int reset_button = ;// muss ein pin mit PULL-UP-RESISTOR sein
 
 // === LED DATA ===
 const int NUMPIXELS = 12;
@@ -61,16 +63,16 @@ void setup_wifi() {
 }
 
 void callback(char *topic, byte *payload, unsigned int length) { //function die aufgerufen wird wenn auf den gefolgten MQTT kanal was gesendet wird
-    Serial.print("Message arrived in topic: ");
+    /*Serial.print("Message arrived in topic: ");
     Serial.println(topic);
-    Serial.print("Message:");
+    Serial.print("Message:");*/
     String message = String();
     for (int i = 0; i < length; i++) {
         message.concat((char) payload[i]);
     }
-    Serial.println(message);
+    //Serial.println(message);
     analogWrite(ledPin, message.toInt());
-    Serial.println("-----------------------");
+    //Serial.println("-----------------------");
     for (int i = 0; i < partners_count; i++) { //TODO: Was wenn ein lumos nicht mehr sendet und der letzte wert nicht 0 war?
         if (strcmp(String(partners[i],HEX).c_str(), topic) == 0) {
             int value = message.toInt();
@@ -89,7 +91,7 @@ int measureSound(){
     int reading = analogRead(soundPin);
     if (reading < 0) { reading = -reading;}
     reading = (reading/4);
-    if (reading < 30) {reading = 0;}
+    if (reading < 27) {reading = 0;}
     reading = (reading + 3*last_sound)/4;
     reading = (reading + last_last_sound)/2;
     if (reading < 15){reading = reading/4;}
@@ -120,11 +122,48 @@ void draw_led(int R,int G, int B, int Brightness) {
     pixels.show();
 }
 
+// === Button action ===
+
+void off_button_loop() { //Könnte verbessert werden in dem der ESP in ein Sleep-mode versetzt wird
+    if (digitalRead(turn_off_button) == LOW) {
+        Serial.println("Button pressed");
+        for (int i = 0; i < 3; i++) {
+            client.publish(String(lumos_id,HEX).c_str(),std::to_string(3).c_str());
+            delay(50);
+        }
+        draw_led(0,0,0);
+        while (digitalRead(turn_off_button) == LOW){;}
+        Serial.println("Button released");
+        while (digitalRead(turn_off_button) == HIGH){;}
+        Serial.println("Button pressed");
+        while (digitalRead(turn_off_button) == LOW){;}
+        Serial.println("Button released");
+
+    }
+
+}
+
+// === Adaptive brightness ===
+int loops_sins_brightness_measured =0;
+int led_brightness = 100;
+void adapt_brightness() {
+    if(RGB_values[0]+RGB_values[1]+RGB_values[2] == 0 || loops_sins_brightness_measured > 500){
+        draw_led(0,0, 0);
+        int brightness = analogRead(lightSensPin);
+        draw_led(RGB_values[0],RGB_values[1],RGB_values[2],led_brightness);
+        if (brightness > 1500){led_brightness = 100;}
+        else if (brightness > 500){led_brightness = 60;}
+        else if (brightness > 200){led_brightness = 10;}
+        loops_sins_brightness_measured = 0;
+    }
+    loops_sins_brightness_measured++;
+}
+
 
 void setup() {
-    //draw_led(255, 255, 255);
     Serial.begin(115200);
     pinMode(ledPin, OUTPUT);
+    pinMode(turn_off_button, INPUT_PULLUP);
     setup_wifi();
     client.setServer(mqtt_broker, mqtt_port);
     client.setCallback(callback);
@@ -148,22 +187,13 @@ void setup() {
         }
     }
 }
-int loops_sins_brightness_measured =0;
-int led_brightness = 100;
+
 void loop() {
     client.loop();
     client.publish(String(lumos_id,HEX).c_str(),std::to_string(measureSound()).c_str());
+    adapt_brightness();
     draw_led(RGB_values[0],RGB_values[1],RGB_values[2],led_brightness);
-
-    if(RGB_values[0]+RGB_values[1]+RGB_values[2] == 0 || loops_sins_brightness_measured > 500){
-        draw_led(0,0,0);
-        int brightness = analogRead(lightSensPin);
-        draw_led(RGB_values[0],RGB_values[1],RGB_values[2],led_brightness);
-        if (brightness > 1500){led_brightness = 100;}
-        else if (brightness > 500){led_brightness = 60;}
-        else if (brightness > 200){led_brightness = 10;}
-        loops_sins_brightness_measured = 0;
-    }
-    loops_sins_brightness_measured++;
+    off_button_loop();
 }
+
 
