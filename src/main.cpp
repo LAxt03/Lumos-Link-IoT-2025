@@ -122,6 +122,30 @@ void draw_led(int R,int G, int B, int Brightness) {
     pixels.show();
 }
 
+void loading_animation(int R,int G, int B) {
+    while (true){
+        for (int i = 0; i < NUMPIXELS; i++) {
+            pixels.setPixelColor(i, pixels.Color(R, G, B));
+            pixels.show();
+            pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+            delay(50);
+        }
+    }
+}
+void loading_animation_MQTT(void * pvParameters ) {
+    loading_animation(255,0,255);
+}
+void loading_animation_WIFI(void * pvParameters ) {
+    loading_animation(0,255,255);
+}
+
+
+TaskHandle_t Wifi_loading;
+TaskHandle_t MQTT_loading;
+
+
+//xTaskCreatePinnedToCore(loading_animation_MQTT,"MQTT_loading",10000,NULL,1,&Wifi_loading,0);
+
 // === Button action ===
 
 void off_button_loop() { //
@@ -160,7 +184,10 @@ void setup() {
     pinMode(ledPin, OUTPUT);
     pinMode(turn_off_button, INPUT_PULLUP);
     esp_sleep_enable_ext0_wakeup(GPIO_NUM_14, LOW);
+    xTaskCreate(loading_animation_WIFI,"Wifi_loading",10000,NULL,1,&Wifi_loading);//Animation fürs laden die nebenläufig ist
     setup_wifi();
+    vTaskDelete(Wifi_loading);
+    xTaskCreate(loading_animation_MQTT,"MQTT_loading",10000,NULL,1,&MQTT_loading);//Animation fürs laden die nebenläufig ist
     client.setServer(mqtt_broker, mqtt_port);
     client.setCallback(callback);
     while (!client.connected()) {
@@ -182,6 +209,7 @@ void setup() {
             Serial.println(String(partners[i],HEX).c_str());
         }
     }
+    vTaskDelete(MQTT_loading);
 }
 
 void loop() {
