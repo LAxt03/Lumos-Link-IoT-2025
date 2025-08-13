@@ -10,7 +10,7 @@ const int lightSensPin = 33;
 const int soundPin = 34;
 const int ledPin= 12;
 const int turn_off_button = 14; // muss ein pin mit PULL-UP-RESISTOR sein
-//const int reset_button = ;// muss ein pin mit PULL-UP-RESISTOR sein
+const int reset_button = 4 ;// muss ein pin mit PULL-UP-RESISTOR sein
 
 // === LED DATA ===
 const int NUMPIXELS = 12;
@@ -114,7 +114,7 @@ void draw_led(int R,int G, int B) {
 void draw_led(int R,int G, int B, int Brightness) {
     for(int i=0; i<NUMPIXELS; i++) {
         pixels.setPixelColor(i, pixels.Color(
-            static_cast<int>(static_cast<float>(R)*static_cast<float>(Brightness)/100),
+            static_cast<int>(static_cast<float>(R)*static_cast<float>(Brightness)/100), // für Prozentrechnungen werden die Integer zu Floats gecastet und wieder zurück
             static_cast<int>(static_cast<float>(G)*static_cast<float>(Brightness)/100),
             static_cast<int>(static_cast<float>(B)*static_cast<float>(Brightness)/100)
             ));
@@ -124,7 +124,7 @@ void draw_led(int R,int G, int B, int Brightness) {
 
 // === Button action ===
 
-void off_button_loop() { //Könnte verbessert werden in dem der ESP in ein Sleep-mode versetzt wird
+void off_button_loop() { //
     if (digitalRead(turn_off_button) == LOW) {
         Serial.println("Button pressed");
         for (int i = 0; i < 3; i++) {
@@ -132,13 +132,8 @@ void off_button_loop() { //Könnte verbessert werden in dem der ESP in ein Sleep
             delay(50);
         }
         draw_led(0,0,0);
-        while (digitalRead(turn_off_button) == LOW){;}
-        Serial.println("Button released");
-        while (digitalRead(turn_off_button) == HIGH){;}
-        Serial.println("Button pressed");
-        while (digitalRead(turn_off_button) == LOW){;}
-        Serial.println("Button released");
-
+        delay(50);
+        esp_deep_sleep_start(); //Geht in den DEEP_SLEEP wo nur noch der co-Prozessor aktiv ist.
     }
 
 }
@@ -164,6 +159,7 @@ void setup() {
     Serial.begin(115200);
     pinMode(ledPin, OUTPUT);
     pinMode(turn_off_button, INPUT_PULLUP);
+    esp_sleep_enable_ext0_wakeup(GPIO_NUM_14, LOW);
     setup_wifi();
     client.setServer(mqtt_broker, mqtt_port);
     client.setCallback(callback);
