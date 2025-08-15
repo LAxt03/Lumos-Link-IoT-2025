@@ -61,7 +61,7 @@ void setup_wifi() {
     Serial.print("IP Adresse: ");
     Serial.println(WiFi.localIP());
 }
-
+// === MQTT ===
 void callback(char *topic, byte *payload, unsigned int length) { //function die aufgerufen wird wenn auf den gefolgten MQTT kanal was gesendet wird
     /*Serial.print("Message arrived in topic: ");
     Serial.println(topic);
@@ -85,6 +85,34 @@ void callback(char *topic, byte *payload, unsigned int length) { //function die 
         }
     }
 }
+
+void build_MQTT_connection() {
+    client.setServer(mqtt_broker, mqtt_port);
+    client.setCallback(callback);
+    while (!client.connected()) {
+        String client_id = String(lumos_id,HEX);
+        Serial.printf("The client %s connects to the public MQTT broker\n", client_id.c_str());
+        if (client.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
+            Serial.println("Public EMQX MQTT broker connected");
+        } else {
+            Serial.print("failed with state ");
+            Serial.print(client.state());
+            delay(2000);
+        }
+    }
+
+}
+void sub_to_lumos() {
+    for (int i = 0; i < partners_count; i++) {
+        if (partners[i]!=0) {
+            client.subscribe(String(partners[i],HEX).c_str());
+            Serial.print("Subscrinbed to: ");
+            Serial.println(String(partners[i],HEX).c_str());
+        }
+    }
+}
+
+// === Sound handling ===
 int last_last_sound = 0;
 int last_sound = 0;
 int measureSound(){
@@ -188,31 +216,22 @@ void setup() {
     setup_wifi();
     vTaskDelete(Wifi_loading);
     xTaskCreate(loading_animation_MQTT,"MQTT_loading",10000,NULL,1,&MQTT_loading);//Animation fürs laden die nebenläufig ist
-    client.setServer(mqtt_broker, mqtt_port);
-    client.setCallback(callback);
-    while (!client.connected()) {
-        String client_id = String(lumos_id,HEX);
-        Serial.printf("The client %s connects to the public MQTT broker\n", client_id.c_str());
-        if (client.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
-            Serial.println("Public EMQX MQTT broker connected");
-        } else {
-            Serial.print("failed with state ");
-            Serial.print(client.state());
-            delay(2000);
-        }
-    }
-
-    for (int i = 0; i < partners_count; i++) {
-        if (partners[i]!=0) {
-            client.subscribe(String(partners[i],HEX).c_str());
-            Serial.print("Subscrinbed to: ");
-            Serial.println(String(partners[i],HEX).c_str());
-        }
-    }
+    build_MQTT_connection();
+    sub_to_lumos();
     vTaskDelete(MQTT_loading);
 }
 
 void loop() {
+    if (WiFi.status() != WL_CONNECTED) {
+        xTaskCreate(loading_animation_WIFI,"Wifi_loading",10000,NULL,1,&Wifi_loading);
+        WiFi.reconnect();
+        vTaskDelete(Wifi_loading);
+    }else if (!client.loop()) {
+        xTaskCreate(loading_animation_MQTT,"MQTT_loading",10000,NULL,1,&MQTT_loading);
+        build_MQTT_connection();
+        sub_to_lumos();
+        vTaskDelete(MQTT_loading);
+    }
     client.loop();
     client.publish(String(lumos_id,HEX).c_str(),std::to_string(measureSound()).c_str());
     adapt_brightness();
