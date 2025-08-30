@@ -139,36 +139,9 @@ void startConfigPortal()
     Serial.println("[INFO] WLAN und MQTT Parameter gespeichert");
 }
 
-// === Funktion: WLAN verbinden === ALTER CODE ohne WIFI MANAGER ===
-/*
-void setup_wifi()
-{
-    delay(100);
-    Serial.println();
-    Serial.print("Verbinde mit WLAN: ");
-    Serial.println(ssid);
-
-    WiFi.begin(ssid, password);
-
-    while (WiFi.status() != WL_CONNECTED)
-    {
-        delay(500);
-        Serial.print(".");
-    }
-
-    Serial.println("");
-    Serial.println(" WLAN verbunden!");
-    Serial.print("IP Adresse: ");
-    Serial.println(WiFi.localIP());
-}
-*/
-
 // === MQTT ===
 void callback(char *topic, byte *payload, unsigned int length)
-{ // function die aufgerufen wird wenn auf den gefolgten MQTT kanal was gesendet wird
-    /*Serial.print("Message arrived in topic: ");
-    Serial.println(topic);
-    Serial.print("Message:");*/
+{ // function die aufgerufen wird wenn auf den gefolgten MQTT kanal was gesendet wurde
     String message = String();
     for (int i = 0; i < length; i++)
     {

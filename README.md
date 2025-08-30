@@ -13,7 +13,7 @@ Diese Anleitung beschreibt Schritt für Schritt, wie du deine Lumos-Lampe mit ES
 - **1x Sound-Sensor**
 - **2x Taster** (jeweils mit 2 Kabeln angeschlossen)
 - **1x 3-poliges Kabel**
-- **2x Jumperkabel**
+- **3x Jumperkabel**
 - **1x Plastikbase** (schwarz oder weiß)
 - **1x transparente Plastikplatte**
 - **1x LED-Ring-Kappe**
