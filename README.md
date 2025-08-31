@@ -2,6 +2,7 @@
 # DIY-Anleitung: Lumos-Lampe
 
 Diese Anleitung beschreibt Schritt für Schritt, wie du deine Lumos-Lampe mit ESP32 und Sensoren aufbaust.
+Zu allen Schritten der Aufbauanleitung sind Bilder in dem Ordner "DIY - Bilder" hinterlegt.
 
 ---
 
@@ -19,6 +20,47 @@ Diese Anleitung beschreibt Schritt für Schritt, wie du deine Lumos-Lampe mit ES
 - **1x LED-Ring-Kappe**
 - **1x Lumos-Geist**
 - **1x Stabilitätsring**
+
+---
+
+## 📖 Erklärung der Teile
+
+- **ESP32**  
+  Zentrale Steuereinheit, übernimmt die gesamte Logik, WLAN-Verbindung und Kommunikation über MQTT.  
+
+- **LED-Ring**  
+  Dient als visuelles Ausgabeelement und zeigt unterschiedliche Lichtmuster und Farben abhängig vom Zustand des Systems.  
+
+- **Lichtsensor**  
+  Misst die Umgebungshelligkeit, damit die Lampe nicht zu hell leuchtet und sich an die Lichtverhältnisse anpasst.  
+
+- **Sound-Sensor**  
+  Erkennt Geräusche in der Umgebung und dient als Auslöser für die Signale, die an andere Lumos-Lampen gesendet werden.  
+
+- **2x Taster**  
+  - **Aus-Taster**: Schaltet die Lampe aus.  
+  - **Reset-Taster**: Startet das WiFiManager-Portal zur Neukonfiguration.  
+
+- **3-poliges Kabel**  
+  Verbindet den LED-Ring mit dem ESP32 (GND, Power, Data).  
+
+- **3x Jumperkabel**  
+  Dienen der flexiblen Verbindung von Sensoren mit den entsprechenden GPIO-Pins des ESP32.  
+
+- **Plastikbase**  
+  Fundament und Halterung für die gesamte Konstruktion, sorgt für Stabilität.  
+
+- **Transparente Plastikplatte**  
+  Trägerplatte für den ESP32 und andere elektronische Komponenten.  
+
+- **LED-Ring-Kappe**  
+  Schützt den LED-Ring und sorgt für eine gleichmäßige Lichtstreuung.  
+
+- **Lumos-Geist**  
+  Dekorative Abdeckung in Geisterform, die dem Projekt seinen charakteristischen Look gibt.  
+
+- **Stabilitätsring**  
+  Fixiert den Lumos-Geist auf der Base und sorgt für einen sicheren Halt.  
 
 ---
 
@@ -85,6 +127,8 @@ Diese Anleitung beschreibt Schritt für Schritt, wie du deine Lumos-Lampe mit ES
 
 ---
 
-✅ Fertig! Deine Lumos-Lampe ist nun aufgebaut und bereit zur Inbetriebnahme.  
+Fertig! Deine Lumos-Lampe ist nun aufgebaut und bereit zur Inbetriebnahme.  
+
+
 
 
